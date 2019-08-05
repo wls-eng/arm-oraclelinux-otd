@@ -168,8 +168,8 @@ function installOTD()
     echo "---------------- Installing OTD ${OTD_JAR} ----------------"
     echo ">>>> ORACLE_HOME: ${ORACLE_HOME} <<<<<<<"
     export INSTALL_TYPE="Standalone OTD (Managed independently of WebLogic server)"
-    echo ${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE=${INSTALL_TYPE} -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc
-    sudo runuser -l oracle -c "${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE=${INSTALL_TYPE} -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc"
+    echo ${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE=\"${INSTALL_TYPE}\" -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc
+    runuser -l oracle -c "${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE=\"${INSTALL_TYPE}\" -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc"
 
     # Check for successful installation and version requested
     if [[ $? == 0 ]];
