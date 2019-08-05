@@ -214,7 +214,7 @@ then
 	exit 1
 fi	
 
-export OTD_VER="12.2.1.4.0"
+export OTD_VER="12.2.1.3.0"
 
 #add oracle group and user
 echo "Adding oracle user and group..."
@@ -222,8 +222,8 @@ groupname="oracle"
 username="oracle"
 user_home_dir="/u01/oracle"
 USER_GROUP=${groupname}
-#sudo groupadd $groupname
-#sudo useradd -d ${user_home_dir} -g $groupname $username
+sudo groupadd $groupname
+sudo useradd -d ${user_home_dir} -g $groupname $username
 
 JDK_PATH="/u01/app/jdk"
 OTD_PATH="/u01/app/otd"
@@ -248,7 +248,7 @@ sudo chown -R $username:$groupname /u01/app
 
 sudo cp $BASE_DIR/fmw_12.2.1.3.0_otd_linux64_Disk1_1of1.zip $OTD_PATH/fmw_12.2.1.3.0_otd_linux64_Disk1_1of1.zip
 #sudo cp $BASE_DIR/fmw_12.2.1.4.0_otd_linux64.bin $OTD_PATH/fmw_12.2.1.4.0_otd_linux64.bin
-sudo cp $BASE_DIR/jdk-8u211-linux-x64.tar.gz $JDK_PATH/jdk-8u131-linux-x64.tar.gz
+sudo cp $BASE_DIR/jdk-8u131-linux-x64.tar.gz $JDK_PATH/jdk-8u131-linux-x64.tar.gz
 
 echo "extracting and setting up jdk..."
 sudo tar -zxvf $JDK_PATH/jdk-8u131-linux-x64.tar.gz --directory $JDK_PATH

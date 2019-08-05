@@ -239,7 +239,7 @@
       },
       {
          "type":"Microsoft.Compute/virtualMachines/extensions",
-         "name":"[concat(variables('vmName'),'/newuserscript')]",
+         "name":"[concat(variables('vmName'),'/installOTD.sh')]",
          "apiVersion":"2017-12-01",
          "location":"[parameters('location')]",
          "dependsOn":[
