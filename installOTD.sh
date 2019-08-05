@@ -129,7 +129,7 @@ Response File Version=1.0.0.0.0
 [GENERIC]
 
 #This will be blank when there is nothing to be de-installed in distribution level
-SELECTED_DISTRIBUTION=Standalone OTD (Managed independently of WebLogic server)~[WLSVER]
+SELECTED_DISTRIBUTION=Standalone OTD (Managed independently of WebLogic server)~[OTDVER]
 
 #The oracle home location. This can be an existing Oracle Home or a new Oracle Home
 ORACLE_HOME=[INSTALL_PATH]/Oracle/Middleware/Oracle_Home/
@@ -144,7 +144,7 @@ function installOTD()
     echo "Creating silent files for installation from silent file templates..."
 
     sed 's@\[INSTALL_PATH\]@'"$INSTALL_PATH"'@' ${SILENT_FILES_DIR}/uninstall-response.template > ${SILENT_FILES_DIR}/uninstall-response
-    sed -i 's@\[WLSVER\]@'"$OTD_VER"'@' ${SILENT_FILES_DIR}/uninstall-response
+    sed -i 's@\[OTDVER\]@'"$OTD_VER"'@' ${SILENT_FILES_DIR}/uninstall-response
     sed 's@\[INSTALL_PATH\]@'"$INSTALL_PATH"'@' ${SILENT_FILES_DIR}/response.template > ${SILENT_FILES_DIR}/response
     sed 's@\[INSTALL_PATH\]@'"$INSTALL_PATH"'@' ${SILENT_FILES_DIR}/oraInst.loc.template > ${SILENT_FILES_DIR}/oraInst.loc
     sed -i 's@\[GROUP\]@'"$USER_GROUP"'@' ${SILENT_FILES_DIR}/oraInst.loc
@@ -162,10 +162,14 @@ function installOTD()
             echo "#########################################################################################################"
     fi
 
+    echo "---------------- Installing Linux prerequisite libraries required for OTD --------------"
+    sudo yum install -y binutils compat-libcap1 compat-libstdc++-33 libgcc libstdc++ libstdc++-devel sysstat gcc gcc-c++ ksh make glibc glibc-devel libaio libaio-devel 
+
     echo "---------------- Installing OTD ${OTD_JAR} ----------------"
     echo ">>>> ORACLE_HOME: ${ORACLE_HOME} <<<<<<<"
-    echo ${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE="Standalone OTD (Managed independently of WebLogic server)" -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc
-    sudo runuser -l oracle -c "${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE="Standalone OTD \(Managed independently of WebLogic server\)" -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc"
+    export INSTALL_TYPE="Standalone OTD (Managed independently of WebLogic server)"
+    echo ${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE=${INSTALL_TYPE} -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc
+    sudo runuser -l oracle -c "${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE=${INSTALL_TYPE} -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc"
 
     # Check for successful installation and version requested
     if [[ $? == 0 ]];
