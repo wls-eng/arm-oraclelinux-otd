@@ -190,7 +190,7 @@ function installOTD()
 CURR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export BASE_DIR="$(readlink -f ${CURR_DIR})"
 
-if [ $# -ne 3 ]
+if [ $# -ne 4 ]
 then
     usage
 	exit 1
