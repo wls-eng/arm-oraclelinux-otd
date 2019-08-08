@@ -260,7 +260,7 @@
                     "fileUris": [
             "https://raw.githubusercontent.com/ta9846/arm-oraclelinux-otd/develop/installOTD.sh"
             ],
-              "commandToExecute": "[concat('sh installOTD.sh',' ',parameters('acceptOTNLicenseAgreement'),' ',parameters('otnAccountUsername'),' ',parameters('otnAccountPassword'),' ',parameters('wlsClusterAddress'))]"
+              "commandToExecute": "[concat('sh installOTD.sh',' ',parameters('acceptOTNLicenseAgreement'),' ',parameters('otnAccountUsername'),' ',parameters('otnAccountPassword'),' ',parameters('originServers'))]"
             }
          }
       }
