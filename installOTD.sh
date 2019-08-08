@@ -9,7 +9,7 @@ function echo_stderr ()
 #Function to display usage message
 function usage()
 {
-  echo_stderr "./installOTD.sh <acceptOTNLicenseAgreement> <otnusername> <otnpassword>"  
+  echo_stderr "./installOTD.sh <acceptOTNLicenseAgreement> <otnusername> <otnpassword> <originServers>"  
 }
 
 #Function to cleanup all temporary files
@@ -137,6 +137,28 @@ ORACLE_HOME=[INSTALL_PATH]/Oracle/Middleware/Oracle_Home/
 EOF
 }
 
+# Uninstall OTD if already present
+function uninstallOTD()
+{
+    export UNINSTALL_SCRIPT=$INSTALL_PATH/Oracle/Middleware/Oracle_Home/oui/bin/deinstall.sh
+    if [ -f "$UNINSTALL_SCRIPT" ]
+    then
+            echo "#########################################################################################################"
+
+	    echo "Stopping OTD server..."
+	    sudo runuser -l oracle -c "$OTD_DOMAIN_HOME/config/fmwconfig/components/OTD/instances/${OTD_INSTANCE}/bin/stopserv > /dev/null 2>&1 &"
+
+	    currentVer=`. $INSTALL_PATH/Oracle/Middleware/Oracle_Home/oui/bin/viewInventory.sh  | grep fmw_install_otd | awk {'print $3'}`
+            echo "Uninstalling already installed version :"$currentVer
+            sudo runuser -l oracle -c "$UNINSTALL_SCRIPT -silent -responseFile ${SILENT_FILES_DIR}/uninstall-response"
+
+	    sudo rm -rf $INSTALL_PATH/*
+	    sudo rm -rf $OTD_DOMAIN_HOME/*
+
+	    echo "#########################################################################################################"
+    fi
+}
+
 #Install OTD using Silent Installation Templates
 function installOTD()
 {
@@ -151,54 +173,94 @@ function installOTD()
 
     echo "Created files required for silent installation at $SILENT_FILES_DIR"
 
-    export UNINSTALL_SCRIPT=$INSTALL_PATH/Oracle/Middleware/Oracle_Home/oui/bin/deinstall.sh
-    if [ -f "$UNINSTALL_SCRIPT" ]
-    then
-            #currentVer=`. $INSTALL_PATH/Oracle/Middleware/Oracle_Home/wlserver/server/bin/setWLSEnv.sh 1>&2 ; java weblogic.version |head -2`
-            echo "#########################################################################################################"
-            #echo "Uninstalling already installed version :"$currentVer
-            sudo runuser -l oracle -c "$UNINSTALL_SCRIPT -silent -responseFile ${SILENT_FILES_DIR}/uninstall-response"
-            sudo rm -rf $INSTALL_PATH/*
-            echo "#########################################################################################################"
-    fi
+    # Uninstall OTD if already exists
+    uninstallOTD
 
     echo "---------------- Installing Linux prerequisite libraries required for OTD --------------"
     sudo yum install -y binutils compat-libcap1 compat-libstdc++-33 libgcc libstdc++ libstdc++-devel sysstat gcc gcc-c++ ksh make glibc glibc-devel libaio libaio-devel 
 
     echo "---------------- Installing OTD ${OTD_JAR} ----------------"
-    echo ">>>> ORACLE_HOME: ${ORACLE_HOME} <<<<<<<"
     export INSTALL_TYPE="Standalone OTD (Managed independently of WebLogic server)"
     echo ${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE=\"${INSTALL_TYPE}\" -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc
+
     runuser -l oracle -c "${OTD_JAR} -silent ORACLE_HOME=$ORACLE_HOME DECLINE_SECURITY_UPDATES=true INSTALL_TYPE=\"${INSTALL_TYPE}\" -invPtrLoc ${SILENT_FILES_DIR}/oraInst.loc"
 
     # Check for successful installation and version requested
     if [[ $? == 0 ]];
     then
-      echo "OTD Installation is successful"
+      echo "OTD Installation is successful!"
     else
 
-      echo_stderr "Installation is not successful"
+      echo_stderr "Installation is not successful!"
       exit 1
     fi
     echo "#########################################################################################################"                                          
-
 }
 
+# Create py script for OTD instance creation
+function createDomainScript()
+{
+    echo "creating wlst script to configure OTD..."
+
+    OTDVM_PUBLIC_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+    export OTDVM_PUBLIC_IP
+
+    cat <<EOF >${user_home_dir}/configureOTD.py
+try:
+  print 'Creating OTD Domain...'
+  props = {'domain-home': '${OTD_DOMAIN_HOME}'}
+  otd_createStandaloneDomain(props)
+  print 'OTD Domain created successfully!'
+
+  print 'Creating OTD instance...'
+  props = {'domain-home': '${OTD_DOMAIN_HOME}', 'origin-server': '${originServers}', 'listener-port': '1905', 'instance': '${OTD_INSTANCE}', 'server-name': '${OTDVM_PUBLIC_IP}'}
+  otd_createStandaloneInstance(props)
+  print 'OTD instance created successfully!'
+except Exception, e :
+  print e
+
+EOF
+    sudo chown $username:$groupname ${user_home_dir}/configureOTD.py
+}
+
+# Create OTD domain and start instance
+function startOTDInstance()
+{
+    # create py script
+    createDomainScript
+
+    # execute py script
+    runuser -l oracle -c "${ORACLE_HOME}/oracle_common/common/bin/wlst.sh ${user_home_dir}/configureOTD.py"
+    sleep 10
+
+    # start OTD instance
+    runuser -l oracle -c "$OTD_DOMAIN_HOME/config/fmwconfig/components/OTD/instances/${OTD_INSTANCE}/bin/startserv > /dev/null 2>&1 &"
+
+    if [[ $? == 0 ]];
+    then
+      echo "OTD instance started successfully!"
+    else
+
+      echo_stderr "Issues in starting up OTD instance!"
+      exit 1
+    fi
+}
 
 #main script starts here
 
 CURR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export BASE_DIR="$(readlink -f ${CURR_DIR})"
 
-if [ $# -ne 3 ]
+if [ $# -ne 4 ]
 then
     usage
-	exit 1
+    exit 1
 fi
 
 export acceptOTNLicenseAgreement="$1"
 export otnusername="$2"
 export otnpassword="$3"
+export originServers="$4"
 
 if [ -z "$acceptOTNLicenseAgreement" ];
 then
@@ -212,9 +274,9 @@ then
     exit 1
 fi
 
-if [[ -z "$otnusername" || -z "$otnpassword" ]]
+if [[ -z "$otnusername" || -z "$otnpassword" || -z "$originServers" ]]
 then
-	echo_stderr "otnusername or otnpassword is required. "
+	echo_stderr "otnusername / otnpassword / originServers is required. "
 	exit 1
 fi	
 
@@ -271,8 +333,8 @@ else
     exit 1
 fi
 
-echo "Installing zip unzip wget vnc-server rng-tools"
-sudo yum install -y zip unzip wget vnc-server rng-tools
+echo "Installing zip unzip wget vnc-server rng-tools bind-utils"
+sudo yum install -y zip unzip wget vnc-server rng-tools bind-utils
 
 echo "unzipping fmw_12.2.1.3.0_otd_linux64_Disk1_1of1.zip..."
 sudo unzip -o $OTD_PATH/fmw_12.2.1.3.0_otd_linux64_Disk1_1of1.zip -d $OTD_PATH
@@ -285,6 +347,9 @@ sudo chown -R $username:$groupname $OTD_PATH
 export INSTALL_PATH="$OTD_PATH/install"
 export ORACLE_HOME="$OTD_PATH/install/Oracle/Middleware/Oracle_Home"
 export OTD_JAR="$OTD_PATH/fmw_12.2.1.3.0_otd_linux64.bin"
+export OTD_DOMAIN_HOME=${user_home_dir}/otd_domain
+export OTD_INSTANCE=azure_otd
+
 
 mkdir -p $INSTALL_PATH
 sudo chown -R $username:$groupname $INSTALL_PATH
@@ -295,6 +360,8 @@ create_oraUninstallResponseTemplate
 
 installOTD
 
+startOTDInstance
+
 cleanup
 
-echo "OTD Installation Completed succesfully."
+echo "OTD Setup Completed succesfully."
