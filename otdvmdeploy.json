@@ -46,7 +46,7 @@
       "originServers":{
          "type":"string",
          "metadata":{
-            "description":"Backend server address (cluster address) to be used for OTD load balancer"
+            "description":"Cluster address for OTD load balancer. Input [host]:[port] or comma-separted [host]:[port] or DNS name"
          }
       },
       "dnsLabelPrefix":{

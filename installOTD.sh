@@ -148,7 +148,7 @@ function uninstallOTD()
 	    echo "Stopping OTD server..."
 	    sudo runuser -l oracle -c "$OTD_DOMAIN_HOME/config/fmwconfig/components/OTD/instances/${OTD_INSTANCE}/bin/stopserv > /dev/null 2>&1 &"
 
-	    currentVer=`. $INSTALL_PATH/Oracle/Middleware/Oracle_Home/oui/bin/viewInventory.sh  | grep fmw_install_otd | awk {'print $3'}`
+	    currentVer=`$INSTALL_PATH/Oracle/Middleware/Oracle_Home/oui/bin/viewInventory.sh  | grep fmw_install_otd | awk {'print $3'}`
             echo "Uninstalling already installed version :"$currentVer
             sudo runuser -l oracle -c "$UNINSTALL_SCRIPT -silent -responseFile ${SILENT_FILES_DIR}/uninstall-response"
 
