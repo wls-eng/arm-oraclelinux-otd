@@ -5,6 +5,6 @@
   "icon": "oracle-linux",
   "description": "This template allows you to deploy a Oracle Linux VM with pre-installed Weblogic Server. This will deploy a A1 size VM in the resource group location and return the FQDN of the VM.",
   "summary": "This template takes a minimum amount of parameters and deploys a Oracle Linux VM, using the latest patched version.",
-  "githubUsername": "ta9846",
+  "githubUsername": "wls-eng",
   "dateUpdated": "2019-07-30"
 }
