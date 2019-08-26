@@ -258,7 +258,7 @@
             "autoUpgradeMinorVersion":true,
             "settings":{
                     "fileUris": [
-            "https://raw.githubusercontent.com/wls-eng/arm-oraclelinux-otd/develop/setupOTD.sh"
+            "https://raw.githubusercontent.com/wls-eng/arm-oraclelinux-otd/master/setupOTD.sh"
             ],
               "commandToExecute": "[concat('sh setupOTD.sh',' ',parameters('acceptOTNLicenseAgreement'),' ',parameters('otnAccountUsername'),' ',parameters('otnAccountPassword'),' ',parameters('originServers'))]"
             }
